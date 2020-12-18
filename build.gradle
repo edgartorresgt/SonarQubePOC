@@ -1,0 +1,96 @@
+plugins {
+	id 'org.springframework.boot' version '2.3.5.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+	id 'java'
+	id "org.sonarqube" version "3.0"
+	id 'jacoco'
+}
+
+apply plugin: 'java'
+apply plugin: 'org.sonarqube'
+apply plugin: 'jacoco'
+
+group = 'com.SonarQubePoc'
+version = '0.0.1-SNAPSHOT'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter:2.3.5.RELEASE'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa:2.3.5.RELEASE'
+	implementation 'org.springframework.boot:spring-boot-starter-web:2.3.5.RELEASE'
+	implementation 'org.hibernate:hibernate-core:5.2.16.Final'
+	implementation 'com.h2database:h2:1.4.200'
+	implementation 'mysql:mysql-connector-java'
+	testImplementation 'junit:junit:4.12'
+	testImplementation ('org.springframework.boot:spring-boot-starter-test:2.3.5.RELEASE') {
+		exclude(module: 'junit-vintage-engine')
+	}
+}
+
+jacoco {
+	toolVersion = "0.7.1.201405082137"
+	reportsDir = file("${project.projectDir}/build/reports/")
+}
+
+jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			limit {
+				minimum = 0.9
+			}
+		}
+
+		rule {
+			enabled = false
+			element = 'CLASS'
+			includes = ['org.gradle.*']
+
+			limit {
+				counter = 'LINE'
+				value = 'TOTALCOUNT'
+				maximum = 0.3
+			}
+		}
+	}
+}
+
+jacocoTestReport {
+	reports {
+		html.enabled true
+		xml.enabled true
+		html.destination file("${project.projectDir}/build/reports/jacoco/")
+		xml.destination file("${project.projectDir}/build/reports/test-coverage.xml")
+	}
+}
+
+test {
+	jacoco {
+		destinationFile = file("${project.projectDir}/build/jacoco/test-coverage.exec")
+	}
+}
+
+sonarqube {
+	properties {
+		property "sonar.projectName", "POC SonarQubePoc"
+		property "sonar.projectKey", "org.sonarqube:java-gradle-simple"
+		property "sonar.projectVersion", "1.0"
+		property "sonar.host.url", "http://localhost:9000"
+		property "sonar.login", "admin"
+		property "sonar.password", "admin2020"
+		property "sonar.language", "java"
+		property "sonar.sources", "src/main/java"
+		property "sonar.tests", "src/test/java"
+		property "sonar.dynamicAnalysis", "reuseReports"
+		property "sonar.java.coveragePlugin", "jacoco"
+		property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/test-coverage.xml"
+		property "sonar.scm.disabled", "true"
+	}
+}
+
+tasks.named("sonarqube") {
+	dependsOn(tasks.named("jacocoTestCoverageVerification"))
+	dependsOn(tasks.named("jacocoTestReport"))
+}
